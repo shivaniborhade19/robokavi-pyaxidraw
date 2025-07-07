@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title id="pageTitle">RoboKavi - Marathi Poem Plotter</title>
+  <style>
+    #mainUI { display: none; }
+    #startBtn { font-size: 24px; padding: 20px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body onload="setup()">
+  <!-- 🚀 Start Screen -->
+  <div id="startScreen">
+    <h1>RoboKavi</h1>
+    <button id="startBtn" onclick="startApp()">▶️ Start</button>
+  </div>
+
+  <!-- 🌐 Main App UI -->
+  <div id="mainUI">
+    <h1 id="title">RoboKavi - Marathi Poem Plotter</h1>
+
+    <label>
+      🌐 <input type="checkbox" id="langSwitch" onchange="toggleLang()"> English / मराठी
+    </label><br><br>
+
+    <label>Choose Input Mode:</label><br>
+    <input type="radio" name="inputMode" id="voiceMode" onchange="selectInputMode()"> 🎙️ Voice
+    <input type="radio" name="inputMode" id="typeMode" onchange="selectInputMode()" checked> ✍️ Type<br><br>
+
+    <label id="nameLabel">Enter Name:</label><br>
+    <input type="text" id="name"><br>
+
+    <label id="subjectLabel">Enter Subject:</label><br>
+    <input type="text" id="subject"><br><br>
+
+    <button onclick="generatePoem()" id="submitBtn">Generate Poem</button>
+
+    <p id="status" style="font-weight:bold; font-size: 1.2em; margin-top: 1em;"></p>
+    <pre id="poemOutput" style="white-space: pre-wrap; font-size: 1.1em;"></pre>
+  </div>
+
+  <script>
+    let language = "en";
+
+    function setup() {
+      toggleLang();  // Set default lang labels
+    }
+
+    function startApp() {
+      speak("मी रोबोकवी आहे. तुमचं स्वागत आहे");
+      document.getElementById("startScreen").style.display = "none";
+      document.getElementById("mainUI").style.display = "block";
+    }
+
+    function toggleLang() {
+      language = document.getElementById("langSwitch").checked ? "mr" : "en";
+      document.getElementById("pageTitle").innerText =
+      document.getElementById("title").innerText =
+        language === "mr" ? "रोबोकवी - मराठी कविता प्लॉटर" : "RoboKavi - Marathi Poem Plotter";
+      document.getElementById("nameLabel").innerText =
+        language === "mr" ? "तुमचं नाव:" : "Enter Name:";
+      document.getElementById("subjectLabel").innerText =
+        language === "mr" ? "तुमचा आवडता विषय:" : "Enter Subject:";
+      document.getElementById("submitBtn").innerText =
+        language === "mr" ? "कविता तयार करा" : "Generate Poem";
+    }
+
+    function selectInputMode() {
+      if (document.getElementById("voiceMode").checked) {
+        handleVoiceInput();
+      }
+    }
+
+    function speak(text) {
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = language === "mr" ? "mr-IN" : "en-US";
+      synth.speak(utter);
+    }
+
+    function listen(targetId, promptText, callback = null) {
+      speak(promptText);
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = language === "mr" ? "mr-IN" : "en-US";
+      recognition.onresult = (event) => {
+        document.getElementById(targetId).value = event.results[0][0].transcript;
+        if (callback) callback();
+      };
+      recognition.start();
+    }
+
+    function handleVoiceInput() {
+      const namePrompt = language === "mr" ? "तुमचं नाव सांगा" : "Please tell your name";
+      const subjectPrompt = language === "mr" ? "तुमचा आवडता विषय सांगा" : "Please tell your favorite subject";
+
+      listen("name", namePrompt, () => {
+        setTimeout(() => listen("subject", subjectPrompt), 4000);
+      });
+    }
+
+    async function generatePoem() {
+      const name = document.getElementById("name").value;
+      const subject = document.getElementById("subject").value;
+
+      const status = document.getElementById("status");
+      const output = document.getElementById("poemOutput");
+
+      if (!name || !subject) {
+        status.innerText = language === "mr" ? "❗ कृपया नाव आणि विषय द्या." : "❗ Please provide name and subject.";
+        return;
+      }
+
+      status.innerText = language === "mr" ? "🧠 कविता तयार होते आहे..." : "🧠 Generating poem...";
+      output.innerText = "";
+
+      try {
+        const response = await fetch("/generate-poem", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, subject, language })
+        });
+
+        const data = await response.json();
+        if (!response.ok || data.error) {
+          status.innerText = "❌ " + (data.error || "Something went wrong.");
+          return;
+        }
+
+        output.innerText = data.poem || "No poem generated.";
+        status.innerText = language === "mr"
+          ? "✍️ रोबोकवी कविता लिहीत आहे..."
+          : "✍️ RoboKavi is writing your poem...";
+
+        setTimeout(() => { status.innerText = ""; }, 15000);
+
+      } catch (error) {
+        console.error(error);
+        status.innerText = "❌ Error connecting to server.";
+      }
+    }
+  </script>
+</body>
+</html>

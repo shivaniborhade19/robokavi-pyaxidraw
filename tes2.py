@@ -1,12 +1,12 @@
 from pyaxidraw import axidraw
 
 
-def plot_svg(final_path):
+def plot_svg(svg_path):
     try:
-        print("🖨️ Plotting:", final_path)
+        print("🖨️ Plotting:", svg_path)
 
         ad = axidraw.AxiDraw()
-        ad.plot_setup(final_path)
+        ad.plot_setup(svg_path)
 
         # AxiDraw speed/settings
         ad.options.pen_pos_down = 30

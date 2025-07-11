@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from poem_genrator import generate_poem
 from svg_creator import save_poem_as_svg
-from tes2 import plot_svg  # ✅ move import to top — better practice
+from tes2 import plot_svg  # Assuming plot_svg function is defined in tes2.py
 
 app = Flask(__name__, template_folder='templates')
 CORS(app)
@@ -38,7 +38,15 @@ def generate():
 
         time.sleep(1)  # ensure file system is ready
 
-        # 3. Plot final SVG
+        # 3. Plot Robo_Box.svg first
+        template_path = os.path.join(os.path.dirname(__file__),
+                                     "outline_traced.svg")
+        if os.path.exists(template_path):
+            plot_svg(template_path)
+        else:
+            print("⚠️ Robo_Box.svg not found at:", template_path)
+
+        # 4. Plot final SVG
         plot_svg(final_path)
 
         return jsonify({
